@@ -1,4 +1,4 @@
-class Chunk(object):
+class Chunk:
     """
     Time Chunk class, a Chunk of time with start and end times
 
@@ -6,9 +6,8 @@ class Chunk(object):
 
     Attributes:
             start: a starting time for the chunk (isoformat)
-              end: an ending time for the chunk (isoformat)
+            end: an ending time for the chunk (isoformat)
     """
-
     def __init__(self, start, end):
         self._start = start
         self._end = end
@@ -20,6 +19,10 @@ class Chunk(object):
 
     def end(self):
         return self._end
+
+
+    def __lt__(self, other):
+        return self._start < other.start()
 
 
     def __sub__(self, other):
@@ -37,25 +40,49 @@ class Chunk(object):
         o_start = other.start()
         o_end = other.end()
 
-        if o_start <= this._start and o_end <= this._end:
-            ret.append(tuple(o_start, this._end))
-        elif o_start >= this._start: and o_end >= this._end:
-            ret.append(tuple(this._start, o_end))
-        elif o_start <= this._start and o_end >= this._end:
-            ret.append(tuple(o_start, o_end))
-        else
-            ret.append(tuple(this._start, o_start))
-            ret.append(tuple(o_end, this._end))
+        if o_start <= self._start and o_end < self._end:
+            ret.append(Chunk(o_end, self._end))
+        elif o_start > self._start and o_end >= self._end:
+            ret.append(Chunk(self._start, o_start))
+        elif o_start <= self._start and o_end >= self._end:
+            return [ None ]
+        elif o_start > self._start and o_end < self._end:
+            ret.append(Chunk(self._start, o_start))
+            ret.append(Chunk(o_end, self._end))
 
         return ret
 
 
-    def compare_start(self, other):
-        return self.start() < other.start()
+    def __add__(self, other):
+        """
+        Cases:
+            1. o_start < start and o_end <= end, new start = o_start
+            2. o_start <= start and o_end >= end, new start = o_start, new end = o_end
+            3. o_start >= start and o_end > end, new end = compare_end
+            4. else return current chunk
+
+        Returns:
+            new chunk object
+        """
+        o_start = other.start()
+        o_end = other.end()
+
+        if o_start <= self._start and o_end >= self._end:
+            return Chunk(o_start, o_end)
+        elif o_start < self._start and o_end <= self._end:
+            return Chunk(o_start, self._end)
+        elif o_start >= self._start and o_end > self._end:
+            return Chunk(self._start, o_end)
+        else:
+            return self
 
 
-    def compare_end(self, other):
-        return self.end() < other.end()
+    def __repr__(self):
+        return "({}, {})".format(self._start, self._end)
+
+
+    def __eq__(self, other):
+        return self._start == other.start() and self._end == other.end()
 
 
     def refactor_start(self, replace):
@@ -68,7 +95,7 @@ class Chunk(object):
 
 
 
-class Block(object):
+class Block:
     """
     Time Block class consisting of time Chunks
 
@@ -77,24 +104,41 @@ class Block(object):
     Attributes:
             chunks: a list of chunks the block is made of
     """
-
     def __init__(self, chunks):
-        self._chunks = chunks
+        s_chunks = sorted(chunks)
+        self._chunks = self._clean_chunks(s_chunks)
+
+
+    def _clean_chunks(self, chunks):
+
+        compare = chunks  # Comparison list to check for work being done
+        chunks_length = len(chunks)  # Defined here to remove redundant call
+        updated = True
+
+        while updated:  # Only continue when work was done last iteration
+            for i in range(chunks_length - 1):
+                chunk = chunks[i]
+                for j in range(i+1, chunks_length):
+                    chunk = chunk + chunks[j]
+                compare[i] = chunk
+
+            if compare == chunks:  # Check to see if work was done
+                updated = False
+
+            chunks = compare  # Update chunks for new chunk val
+
+        return chunks
 
 
     def __sub__(self, other):
         # Usage ex: master block - conflict block
+        result = [ ]
+        for chunk in this._chunks:  # iterate through this chunks
+            for o_chunk in other.chunks():  # iterate through other chunks
+                alter_chunks = chunk - o_chunk  # sub other chunk from this chunk
+            [ result.append(c) for c in alter_chunks ]  # append worked on chunk
 
-        for chunk in this._chunks:
-            for o_chunk in other.chunks():
-
-                if o_chunk.overlaps(chunk):
-
-
-
-
-    def __slice(base_chunk, sub_chunk):
-
+        return Block(result)
 
 
     def chunks(self):
