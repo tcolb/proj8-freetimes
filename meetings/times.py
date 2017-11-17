@@ -111,21 +111,27 @@ class Block:
 
     def _clean_chunks(self, chunks):
 
-        compare = chunks  # Comparison list to check for work being done
-        chunks_length = len(chunks)  # Defined here to remove redundant call
+        worked_chunks = chunks  # Comparison list to check for work being done
         updated = True
 
         while updated:  # Only continue when work was done last iteration
+            updated = False
+            chunks_length = len(chunks)  # Remove redundency
             for i in range(chunks_length - 1):
                 chunk = chunks[i]
+                add_chunk = chunk
                 for j in range(i+1, chunks_length):
-                    chunk = chunk + chunks[j]
-                compare[i] = chunk
+                    add_chunk =+ chunks[j]
+                    if add_chunk != chunk: # Check to see if chunk changed
+                        chunk = add_chunk  # To prevent from always triggering
+                        worked_chunks[j] = None  # Mark removal of redundant
+                        updated = True  # Mark updated
+                worked_chunks[i] = add_chunk
 
-            if compare == chunks:  # Check to see if work was done
-                updated = False
-
-            chunks = compare  # Update chunks for new chunk val
+            # Remove redundant chunks from worked_chunks
+            worked_chunks = [ chunk for chunk in worked_chunks if chunk != None ]
+            # Set chunks list to worked_chunks
+            chunks = worked_chunks
 
         return chunks
 
