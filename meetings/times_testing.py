@@ -79,9 +79,20 @@ def test_chunk_addition():
 
 def test_block_initialization():
 
-    # Test to see if blocks combine chunks at init
-    assert Block([chunk_1, chunk_2, chunk_3]) == None
+    chunk_4 = Chunk(arrow.get("2017-11-16T02:00:00-08:00"),
+                    arrow.get("2017-11-16T06:00:00-08:00"))
+    chunk_5 = Chunk(arrow.get("2017-11-16T04:00:00-08:00"),
+                    arrow.get("2017-11-16T08:00:00-08:00"))
+    chunk_6 = Chunk(arrow.get("2017-11-16T10:00:00-08:00"),
+                    arrow.get("2017-11-16T18:00:00-08:00"))
+    chunk_7 = Chunk(arrow.get("2017-11-16T12:00:00-08:00"),
+                    arrow.get("2017-11-16T20:00:00-08:00"))
 
+    # Test to see if blocks combine chunks at init
+    block = Block([chunk_4, chunk_5, chunk_6, chunk_7])
+    #assert  == [ Chunk(arrow.get("2017-11-16T02:00:00-08:00"),
+    #                                                              arrow.get("2017-11-16T20:00:00-08:00")) ]
+    print(block.chunks())
     print("Block initialiation working!")
 
 

@@ -11,6 +11,7 @@ class Chunk:
     def __init__(self, start, end):
         self._start = start
         self._end = end
+        self._empty = False
 
 
     def start(self):
@@ -74,7 +75,7 @@ class Chunk:
         elif o_start >= self._start and o_end > self._end:
             return Chunk(self._start, o_end)
         else:
-            return self
+            return Chunk(self._start, self._end)
 
 
     def __repr__(self):
@@ -85,13 +86,18 @@ class Chunk:
         return self._start == other.start() and self._end == other.end()
 
 
-    def refactor_start(self, replace):
-        self._start = replace
+    def least_times(self, other):
+        return self._start >= other.start() and self._end <= other.end()
 
 
-    def refactor_end(self, replace):
-        self._end = replace
+    def mark_empty(self):
+        self._start = None
+        self._end = None
+        self._empty = True
+        return self
 
+    def empty(self):
+        return self._empty
 
 
 
@@ -121,19 +127,24 @@ class Block:
                 chunk = chunks[i]
                 add_chunk = chunk
                 for j in range(i+1, chunks_length):
-                    add_chunk =+ chunks[j]
-                    if add_chunk != chunk: # Check to see if chunk changed
+                    other_chunk = chunks[j]
+                    add_chunk = add_chunk + other_chunk
+                    if add_chunk != chunk or not add_chunk.least_times(other_chunk):
                         chunk = add_chunk  # To prevent from always triggering
-                        worked_chunks[j] = None  # Mark removal of redundant
+                        worked_chunks[j] = worked_chunks[j].mark_empty()  # Mark removal of redundant
                         updated = True  # Mark updated
                 worked_chunks[i] = add_chunk
 
-            # Remove redundant chunks from worked_chunks
-            worked_chunks = [ chunk for chunk in worked_chunks if chunk != None ]
-            # Set chunks list to worked_chunks
-            chunks = worked_chunks
+                # Remove redundant chunks from worked_chunks
+                print(">> BEFORE", worked_chunks)
+                worked_chunks = [ chunk for chunk in worked_chunks if not chunk.empty() ]
+                print(">> AFTER", worked_chunks)
+                # Set chunks list to worked_chunks
+                chunks = worked_chunks
 
         return chunks
+
+
 
 
     def __sub__(self, other):
