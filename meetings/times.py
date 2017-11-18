@@ -111,36 +111,41 @@ class Block:
             chunks: a list of chunks the block is made of
     """
     def __init__(self, chunks):
-        s_chunks = sorted(chunks)
-        self._chunks = self._clean_chunks(s_chunks)
+        self._chunks = self._merge_chunks(sorted(chunks))
 
 
-    def _clean_chunks(self, chunks):
-
-        worked_chunks = chunks  # Comparison list to check for work being done
+    def _merge_chunks(self, chunks):
+        worked_chunks = chunks  # List to check for work being done
         updated = True
 
-        while updated:  # Only continue when work was done last iteration
+        while updated:  # Only continue when work was done last pass
+
             updated = False
-            chunks_length = len(chunks)  # Remove redundency
-            for i in range(chunks_length - 1):
-                chunk = chunks[i]
-                add_chunk = chunk
-                for j in range(i+1, chunks_length):
+            chunks_length = len(chunks)
+
+            index = 0
+            while chunks_length > 1:  # To avoid index errors
+                chunk = chunks[index]  # Current index chunk
+                work_chunk = chunk  # Chunk to add to
+
+                for j in range(index+1, chunks_length):
                     other_chunk = chunks[j]
-                    add_chunk = add_chunk + other_chunk
-                    if add_chunk != chunk or not add_chunk.least_times(other_chunk):
-                        chunk = add_chunk  # To prevent from always triggering
-                        worked_chunks[j] = worked_chunks[j].mark_empty()  # Mark removal of redundant
+                    work_chunk = work_chunk + other_chunk
+
+                    # Second condition is to check if other_chunk is eclipsed by the work_chunks
+                    # if so, it's redundant and should be marked for removal
+                    if work_chunk != chunk or not work_chunk.least_times(other_chunk):
+                        chunk = work_chunk  # Update chunk changes
+                        worked_chunks[j] = worked_chunks[j].mark_empty()  # Mark removal of redundant chunk
                         updated = True  # Mark updated
-                worked_chunks[i] = add_chunk
+                worked_chunks[index] = work_chunk
 
                 # Remove redundant chunks from worked_chunks
-                print(">> BEFORE", worked_chunks)
                 worked_chunks = [ chunk for chunk in worked_chunks if not chunk.empty() ]
-                print(">> AFTER", worked_chunks)
-                # Set chunks list to worked_chunks
-                chunks = worked_chunks
+
+                chunks = worked_chunks  # Update chunks list changes
+                chunks_length = len(chunks)  # Update length of chunks list
+                index += 1
 
         return chunks
 
