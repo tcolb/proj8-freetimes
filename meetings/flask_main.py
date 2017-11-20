@@ -3,6 +3,7 @@ from flask import render_template
 from flask import request
 from flask import url_for
 import uuid
+from times import Chunk, Block
 
 import json
 import logging
@@ -239,11 +240,15 @@ def events():
     begin_query = add_time(begin_date, flask.session['begin_time'])
     end_query = add_time(begin_date, flask.session['end_time'])
 
-    result = [ ]
+    #free = Chunk(arrow.get(flask.session['begin_time']), arrow.get(flask.session['end_time']))
+    free = Chunk(arrow.get(begin_query), arrow.get(end_query))
+    busy_result = [ ]
+    busy_blocks = [ ]
     # Iterate through number of days, make query between times for each day
     for day in range(diff):
         # Iterate through selected ids
         for cal_id in selected_cals:
+            work_block = Block()
             events = service.events().list(calendarId=cal_id, # Calendar selection
                                            timeMin=begin_query, # Open time
                                            timeMax=end_query, # Close time
@@ -253,15 +258,29 @@ def events():
             # Grab cal events for each id
             for event in events['items']:
                 # Append the event summary, start and end times
-                result.append({'summary': event['summary'],
-                               "startTime": arrow.get(event['start']['dateTime']).format("MM/DD/YYYY HH:mm"), # Format to be human readable
-                               "endTime": arrow.get(event['end']['dateTime']).format("MM/DD/YYYY HH:mm")}) # Format to be human readable
+                arrow_start = arrow.get(event['start']['dateTime'])
+                arrow_end = arrow.get(event['end']['dateTime'])
+                busy_result.append({'summary': event['summary'],
+                               "startTime": arrow_start.format("MM/DD/YYYY HH:mm"), # Format to be human readable
+                               "endTime": arrow_end.format("MM/DD/YYYY HH:mm")}) # Format to be human readable
+                work_block.append(Chunk(arrow_start, arrow_end))
+
+            busy_blocks.append(work_block)
 
         # Adjust dates by one day
         begin_query = next_day(begin_query)
         end_query = next_day(end_query)
 
-    return flask.jsonify(result)
+    print(">> BLOCK >>", busy_blocks[0].chunks())
+    complement = busy_blocks[0].complement(free)
+    print(free)
+    print(">> COMP >>", complement.chunks())
+    for block in busy_blocks[1:]:
+        complement = complement.intersect(block)
+    complement.merge()
+    print(">> RESULT >>", complement.chunks())
+
+    return flask.jsonify(busy=busy_result, free=complement.serializable())
 
 
 ####
