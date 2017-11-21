@@ -240,12 +240,14 @@ def events():
     begin_query = add_time(begin_date, flask.session['begin_time'])
     end_query = add_time(begin_date, flask.session['end_time'])
 
-    #free = Chunk(arrow.get(flask.session['begin_time']), arrow.get(flask.session['end_time']))
-    free = Chunk(arrow.get(begin_query), arrow.get(end_query))
     busy_result = [ ]
-    busy_blocks = [ ]
+    free_blocks = [ ]
     # Iterate through number of days, make query between times for each day
     for day in range(diff):
+
+        free = Chunk(arrow.get(begin_query), arrow.get(end_query))
+        day_blocks = [ ]
+
         # Iterate through selected ids
         for cal_id in selected_cals:
             work_block = Block()
@@ -263,24 +265,27 @@ def events():
                 busy_result.append({'summary': event['summary'],
                                "startTime": arrow_start.format("MM/DD/YYYY HH:mm"), # Format to be human readable
                                "endTime": arrow_end.format("MM/DD/YYYY HH:mm")}) # Format to be human readable
+                # Add events to the day block
                 work_block.append(Chunk(arrow_start, arrow_end))
 
-            busy_blocks.append(work_block)
+            if len(work_block.chunks()) > 0:  # Ugly, temporary
+                day_blocks.append(work_block)
+
+        # Free time processing
+        if len(day_blocks) > 0:  # Ugly, temporary
+            open_block = day_blocks[0].complement(free)
+            for block in day_blocks[1:]:
+                complement = block.complement(free)
+                print(">>", complement.chunks())
+                open_block = open_block.intersect(complement)
+                print(">>>", open_block.chunks())
+            free_blocks.append(open_block.serializable())
 
         # Adjust dates by one day
         begin_query = next_day(begin_query)
         end_query = next_day(end_query)
 
-    print(">> BLOCK >>", busy_blocks[0].chunks())
-    complement = busy_blocks[0].complement(free)
-    print(free)
-    print(">> COMP >>", complement.chunks())
-    for block in busy_blocks[1:]:
-        complement = complement.intersect(block)
-    complement.merge()
-    print(">> RESULT >>", complement.chunks())
-
-    return flask.jsonify(busy=busy_result, free=complement.serializable())
+    return flask.jsonify(busy=busy_result, free=free_blocks)
 
 
 ####

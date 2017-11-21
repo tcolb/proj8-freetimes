@@ -134,7 +134,8 @@
 {% endif %}
 
 <div class="row">
-  <div id="allEvents" style="margin-top: 20px; margin-left: 10px"></div>
+  <div class="col-md" id="allBusy" style="margin-top: 20px; margin-left: 10px"></div>
+  <div clsas="col-md" id="allFree" style="margin-top: 20px; margin-left: 10px"></div>
 </div>
 
 <script>
@@ -161,21 +162,36 @@
       data: JSON.stringify({ 'ids': calIds }),
       success: function(data) {
 
-        console.log("Got event data: " + data.length + " events");
+        console.log("Got busy event data: " + data.busy.length + " events");
         console.log("Clearing old event data from UI...");
         $("#allEvents").empty();
         console.log("Writing new event data to UI...");
 
-        // Add events header
-        $("#allEvents").append("<h5>Events:</h5>")
-        // Iterate through events
-        for (i = 0; i < data.length; i++) {
+        // Predefine
+        var busyDiv = $("#allBusy")
+        var freeDiv = $("#allFree")
+
+        // Add events headers
+        busyDiv.append("<h5>Busy Events:</h5>")
+        freeDiv.append("<h5>Free Times:</h5>")
+
+        // Iterate through busy events
+        for (i = 0; i < data.busy.length; i++) {
           // Add event to html
           // http://api.jquery.com/jQuery/#jQuery2
-          var eventDiv = $("<div/>", { text: data[i]['summary'] +
-                                             ": from " + data[i]['startTime'] +
-                                             " to " + data[i]['endTime']});
-          $("#allEvents").append(eventDiv);
+          var eventDiv = $("<div/>", { text: data.busy[i]['summary'] +
+                                      ": from " + data.busy[i]['startTime'] +
+                                      " to " + data.busy[i]['endTime']});
+          busyDiv.append(eventDiv);
+        }
+
+        // Iterate through free times
+        for (i = 0; i < data.free.length; i++) {
+          for (j = 0; j < data.free[i].length; j++) {
+            var eventDiv = $("<div/>", { text: data.free[i][j]['startTime'] +
+                                        " to " + data.free[i][j]['endTime']});
+            freeDiv.append(eventDiv);
+          }
         }
       }
     });
