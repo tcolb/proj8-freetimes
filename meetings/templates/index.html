@@ -162,14 +162,17 @@
       data: JSON.stringify({ 'ids': calIds }),
       success: function(data) {
 
-        console.log("Got busy event data: " + data.busy.length + " events");
-        console.log("Clearing old event data from UI...");
-        $("#allEvents").empty();
-        console.log("Writing new event data to UI...");
-
         // Predefine
         var busyDiv = $("#allBusy")
         var freeDiv = $("#allFree")
+
+        console.log("Got busy event data: " + data.busy.length + " events");
+        console.log("Clearing old event data from UI...");
+        busyDiv.empty();
+        freeDiv.empty();
+        console.log("Writing new event data to UI...");
+
+
 
         // Add events headers
         busyDiv.append("<h5>Busy Events:</h5>")
